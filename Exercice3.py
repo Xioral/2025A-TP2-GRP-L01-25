@@ -1,6 +1,9 @@
+from copy import deepcopy
+
 """
 TP2 - Exercice 3 : Optimisation de l'inventaire
 """
+
 
 def verifier_disponibilite(inventaire, recette):
     """
@@ -13,8 +16,8 @@ def verifier_disponibilite(inventaire, recette):
     Returns:
         tuple: (bool, list) - (Peut préparer?, Liste des ingrédients manquants)
     """
-    peut_preparer = True
-    ingredients_manquants = []
+    peut_preparer = all(inventaire.get(ingredient, 0) >= quantite for ingredient, quantite in recette.items())
+    ingredients_manquants = [ingredient for ingredient, quantite in recette.items() if inventaire.get(ingredient, 0) < quantite]
     
     # TODO: Vérifier pour chaque ingrédient de la recette
     # s'il est disponible en quantité suffisante dans l'inventaire
@@ -35,6 +38,7 @@ def mettre_a_jour_inventaire(inventaire, recette, quantite=1):
         dict: Inventaire mis à jour
     """
     nouvel_inventaire = inventaire.copy()
+    nouvel_inventaire = {ingredient: quantite_actuelle - recette.get(ingredient, 0) * quantite for ingredient, quantite_actuelle in nouvel_inventaire.items()}
     
     # TODO: Soustraire les ingrédients utilisés de l'inventaire
     # Multiplier par la quantité si plusieurs portions
@@ -53,9 +57,8 @@ def generer_alertes_stock(inventaire, seuil=10):
     Returns:
         dict: {ingredient: (quantité_actuelle, quantité_à_commander)}
     """
-    alertes = {}
     quantite_standard = 50  # Quantité standard à commander
-    
+    alertes = {ingredient: (quantite_actuelle, quantite_standard - quantite_actuelle) for ingredient, quantite_actuelle in inventaire.items() if quantite_actuelle < seuil}
     # TODO: Identifier les ingrédients avec stock < seuil
     # Suggérer une quantité à commander (ex: 50 unités - stock_actuel)
     
@@ -74,6 +77,22 @@ def calculer_commandes_possibles(inventaire, menu_recettes):
         dict: {nom_plat: nombre_portions_possibles}
     """
     commandes_possibles = {}
+    
+    for plat, ingredients in menu_recettes.items():
+        inventaire_test = deepcopy(inventaire)
+        temoin = True
+        while temoin:
+            for ingredient, nmb in ingredients.items():
+                if inventaire_test[ingredient] - nmb < 0:
+                    temoin = False
+                    break
+                inventaire_test[ingredient] -= nmb
+            if plat not in commandes_possibles and temoin:
+                commandes_possibles[plat] = 1
+            elif temoin:
+                commandes_possibles[plat] += 1
+                
+            
     
     # TODO: Pour chaque plat, calculer combien de portions peuvent être faites
     # Le minimum est déterminé par l'ingrédient le plus limitant (on pourra initialiser une variable nb_portions = infini dans un premier temps)
@@ -96,6 +115,11 @@ def optimiser_achats(inventaire, menu_recettes, previsions_ventes, budget):
     """
     liste_achats = {}
     cout_ingredients = {'tomates': 0.5, 'fromage': 2.0, 'pâtes': 1.0, 'sauce': 1.5, 'pain': 0.8}
+    previsions_ingredient = {}
+    for plat, ingredients in menu_recettes.items():
+        for ingredient, quantite in ingredients.items():
+            previsions_ingredient[ingredient] = previsions_ingredient.get(ingredient, 0) + quantite * previsions_ventes.get(plat, 0)
+    
     
     # TODO: Calculer les besoins totaux selon les prévisions
     # Soustraire l'inventaire actuel
