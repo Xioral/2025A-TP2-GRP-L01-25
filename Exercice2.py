@@ -55,7 +55,7 @@ def estimer_temps_total(liste_commandes_triee):
     
     # TODO: Calculer le temps total et moyen
     # Chaque item prend en moyenne 3 minutes à préparer
-    temps_stats = {"temps_total" : sum(commande["temps_attente"] + 3 * commande["nombre_items"] for commande in liste_commandes_triee), "temps_moyen" : sum(commande["temps_attente"] + 3 * commande["nombre_items"] for commande in liste_commandes_triee) / len(liste_commandes_triee)}
+    temps_stats = {"temps_total" : sum(3 * commande["nombre_items"] for commande in liste_commandes_triee), "temps_moyen" : sum(3 * commande["nombre_items"] for commande in liste_commandes_triee) / len(liste_commandes_triee)}
     
     return temps_stats
 
@@ -88,14 +88,20 @@ if __name__ == '__main__':
         {'numero': 5, 'temps_attente': 15, 'nombre_items': 4, 'client_vip': True},
     ]
     
+    commandes_test_bis = [
+            {'numero': 1, 'temps_attente': 10, 'nombre_items': 3, 'client_vip': False},
+            {'numero': 2, 'temps_attente': 25, 'nombre_items': 2, 'client_vip': True},
+            {'numero': 3, 'temps_attente': 5, 'nombre_items': 5, 'client_vip': False},
+        ]
+    
     # Test de calcul de priorité
     print("Priorités des commandes:")
-    for cmd in commandes_test:
+    for cmd in commandes_test_bis:
         priorite = calculer_priorite(cmd)
         print(f"  Commande {cmd['numero']}: priorité = {priorite}")
     
     # Test du tri
-    commandes_triees = trier_commandes(commandes_test.copy())
+    commandes_triees = trier_commandes(commandes_test_bis.copy())
     print("\nCommandes triées par priorité:")
     for cmd in commandes_triees:
         print(f"  Commande {cmd['numero']} (priorité: {calculer_priorite(cmd)})")

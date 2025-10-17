@@ -30,8 +30,25 @@ def analyser_commentaire(commentaire, mots_cles):
     
     #TODO : Rechercher chaque mot-clé dans le commentaire
         # D'abord, vérifier la correspondance exacte dans la liste des mots
-        # Sinon, vérifier si le mot-clé est le début d'un mot du commentaire (cela permet de trouver "froid" dans "froide" ou "froids"), pour cela utiliser la méthode startswith().
+        # Sinon, vérifier si le mot-clé est le début d'un mot du commentaire 
+        # (cela permet de trouver "froid" dans "froide" ou "froids"), pour cela utiliser la méthode startswith().
     # Borner le score final entre 0 et 10
+    
+    liste = mots_cles.keys()
+    for mot in mots_commentaire:
+        if mot in liste:
+            mots_trouves.append(mot)
+            score_total += mots_cles[mot]
+        else:
+            for i in liste:
+                if i in mot:
+                    mots_trouves.append(i)
+                    score_total += mots_cles[i]
+    
+    if score_total > 10:
+        score_total = 10
+    if score_total < 0:
+        score_total = 0
     
     return score_total, mots_trouves
 
@@ -54,6 +71,15 @@ def categoriser_commentaires(liste_commentaires, mots_cles):
     # Catégoriser selon le score obtenu
     # Stocker le commentaire et son score dans la bonne catégorie
     
+    for i in liste_commentaires:
+        score, mots = analyser_commentaire(i,mots_cles)
+        if score >= 7:
+            categories["positifs"].append((i,score))
+        elif score < 4:
+            categories["negatifs"].append((i,score))
+        else:
+            categories["neutres"].append((i,score))
+    
     return categories
 
 
@@ -73,6 +99,17 @@ def identifier_problemes(commentaires_negatifs, mots_cles_negatifs):
     # TODO: Pour chaque commentaire négatif
     # Compter le nombre d'apparition de chaque mot-clé négatif
     # Retourner un dictionnaire trié par fréquence décroissante
+    
+    temp = {}
+    for i in commentaires_negatifs:
+        score, mots = analyser_commentaire(i, mots_cles_negatifs)
+        for j in mots:
+            if j not in temp.keys():
+                temp[j] = 1
+            else:
+                temp[j] += 1
+    
+    frequence_problemes = dict(sorted(temp.items(), key=lambda item:item[1], reverse=True))
     
     return frequence_problemes
 
@@ -99,6 +136,27 @@ def generer_rapport_satisfaction(categories, frequence_problemes):
     # Calculer la distribution (% positifs, neutres, négatifs)
     # Identifier les 3 principaux points d'amélioration (les 3 problèmes les plus fréquents)
     
+    nbr = 0
+    total = 0
+    distri = []
+    for i in categories.values():
+        distri.append(len(i))
+        for j in i:
+            com, score = j
+            total += score
+            nbr += 1
+    
+    rapport["satisfaction_moyenne"] = total/nbr
+    rapport["distribution"]["positifs"] = str(distri[0]/sum(distri)) + "%"
+    rapport["distribution"]["neutres"] = str(distri[1]/sum(distri)) + "%"
+    rapport["distribution"]["negatifs"] = str(distri[2]/sum(distri)) + "%"
+    
+    if len(categories["positifs"]) > len(categories["negatifs"]):
+        rapport["points_forts"] = ["Service apprécié", "Qualité reconnnue"]
+    
+    
+    rapport["points_amelioration"] = [list(frequence_problemes.keys())[i] for i in range(3)]
+    
     return rapport
 
 
@@ -112,12 +170,28 @@ def calculer_tendance(historique_scores):
     Returns:
         str: 'amélioration', 'stable', ou 'dégradation'
     """
-    tendance = 'stable'
+    tendance = "stable"
     
     # TODO: Analyser l'évolution des scores
     # Si augmentation constante: 'amélioration'
     # Si diminution constante: 'dégradation'
     # Sinon: 'stable'
+    
+    liste = []
+    present = 0
+    precedent = 0
+    
+    for i in range(1,len(historique_scores)):
+        present = historique_scores[i][1]
+        precedent = historique_scores[i-1][1]
+        liste.append(present-precedent)
+    
+    if all(x > 0 for x in liste):
+        tendance = "amélioration"
+    elif all(x < 0 for x in liste):
+        tendance = "dégradation"
+    else:
+        tendance = "stable"
     
     return tendance
 

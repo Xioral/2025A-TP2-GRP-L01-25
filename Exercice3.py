@@ -119,6 +119,19 @@ def optimiser_achats(inventaire, menu_recettes, previsions_ventes, budget):
     for plat, ingredients in menu_recettes.items():
         for ingredient, quantite in ingredients.items():
             previsions_ingredient[ingredient] = previsions_ingredient.get(ingredient, 0) + quantite * previsions_ventes.get(plat, 0)
+    besoins_achat = {ingredient: max(0, previsions_ingredient[ingredient] - inventaire.get(ingredient, 0)) for ingredient in previsions_ingredient}
+    cout_total = 0
+    for ingredient, besoin in sorted(besoins_achat.items(), key=lambda x: cout_ingredients[x[0]]):
+        cout = cout_ingredients[ingredient] * besoin
+        if cout_total + cout <= budget:
+            liste_achats[ingredient] = besoin
+            cout_total += cout
+        else:
+            quantite_possible = (budget - cout_total) // cout_ingredients[ingredient]
+            if quantite_possible > 0:
+                liste_achats[ingredient] = int(quantite_possible)
+                cout_total += quantite_possible * cout_ingredients[ingredient]
+            break
     
     
     # TODO: Calculer les besoins totaux selon les prévisions

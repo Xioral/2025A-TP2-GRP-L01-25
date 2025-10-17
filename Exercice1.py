@@ -28,12 +28,12 @@ def analyser_menu(menu):
     
     # TODO: Calculer le prix moyen du menu
     
-    prix_moyen = sum(prix for prix, _, _ in menu.values())/len(menu)
+    prix_moyen = sum(prix for prix, _, _ in menu.values())/len(menu) if (len(menu) > 0) else 0
     stats['prix_moyen'] = prix_moyen
     
     # TODO: Calculer le temps de préparation moyen
     
-    total_temps = sum(temps for _, temps, _ in menu.values())/len(menu)
+    total_temps = sum(temps for _, temps, _ in menu.values())/len(menu) if (len(menu) > 0) else 0
     stats['temps_moyen'] = total_temps
     
     return stats

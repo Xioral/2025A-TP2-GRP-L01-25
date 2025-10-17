@@ -34,11 +34,15 @@ def initialiser_salle(nb_rangees, nb_colonnes, positions_tables):
             'L2'/'L4' = table libre pour 2/4 personnes
             'X' = espace non disponible
     """
-    salle = []
+    salle = [["X" for j in range(nb_colonnes)] for i in range(nb_rangees)]
     
     # TODO: Créer une grille remplie de 'X' (espaces non disponibles)
     # Puis placer les tables aux positions indiquées
     # Format: 'L2' pour table libre de 2, 'L4' pour table libre de 4
+    
+    for i in positions_tables:
+        y,x,t = i
+        salle[y][x] = "L2" if t == 2 else "L4"
     
     return salle
 
@@ -57,8 +61,13 @@ def marquer_reservation(salle, position, taille_groupe):
     """
     nouvelle_salle = [rangee[:] for rangee in salle]  # Copie profonde
     
-    # TODO: Marquer la table à la position donnée comme réservée (vérifier qu'elle est libre, on pourra utiliser la méthode startswith())
+    # TODO: Marquer la table à la position donnée comme réservée (vérifier 
+    # qu'elle est libre, on pourra utiliser la méthode startswith())
     # 'R2' pour table de 2 réservée, 'R4' pour table de 4
+    
+    y,x = position
+    if nouvelle_salle[y][x][0] == "L":
+        nouvelle_salle[y][x] = "R2" if taille_groupe == 2 else "R4"
     
     return nouvelle_salle
 
@@ -78,7 +87,7 @@ def calculer_score_table(position, taille_table, taille_groupe, nb_colonnes):
         int: Score de la table (plus élevé = meilleur)
             -1 si la table ne convient pas
     """
-    score = 0
+    score = 100
     
     # TODO: Calculer le score selon:
     # - Si taille_table < taille_groupe: retourner -1 (ne convient pas)
@@ -86,6 +95,15 @@ def calculer_score_table(position, taille_table, taille_groupe, nb_colonnes):
     # - Pénalité: -10 points par place vide (gaspillage)
     # - Bonus fenêtre: +20 points si colonne == 0 ou colonne == nb_colonnes-1
     # - Bonus position: +5 points si rangée < 3 (près de l'entrée)
+    
+    if taille_table < taille_groupe:
+        score = -1
+    else:
+        y,x = position
+        libre = taille_table - taille_groupe
+        score -= libre*10
+        score += 5 if x < 3 else 0
+        score += 20 if y == 0 or y == nb_colonnes-1 else 0
     
     return score
 
@@ -106,6 +124,14 @@ def trouver_meilleure_table(salle, taille_groupe):
     
     # TODO: Parcourir toutes les tables libres ('L2' ou 'L4')
     # Calculer leur score et garder la meilleure
+    
+    for i in range(len(salle)):
+        for j in range(len(salle[0])):
+            if salle[i][j] == "L2" or salle[i][j] == "L4":
+                score = calculer_score_table((i,j), 2 if salle[i][j] == "L2" else 4, taille_groupe, len(salle[0]))
+                if score > meilleur_score:
+                    meilleur_score = score
+                    meilleure_table = ((i,j), 2 if salle[i][j] == "L2" else 4)
     
     return meilleure_table
 
@@ -132,6 +158,31 @@ def generer_rapport_occupation(salle):
     
     # TODO: Compter les différents types de tables
     # Calculer le taux d'occupation (réservées + occupées) / total
+    
+    nbr_tables = 0
+    
+    for i in range(len(salle)):
+        for j in range(len(salle[0])):
+            if salle[i][j] == "L2":
+                rapport["tables_libres_2"] += 1
+                nbr_tables += 1
+            elif salle[i][j] == "L4":
+                rapport["tables_libres_4"] += 1
+                nbr_tables += 1
+            elif salle[i][j] == "R2":
+                rapport["tables_reservees_2"] += 1
+                nbr_tables += 1
+            elif salle[i][j] == "R4":
+                rapport["tables_reservees_4"] += 1
+                nbr_tables += 1
+            elif salle[i][j] == "O2":
+                rapport["tables_occupees_2"] += 1
+                nbr_tables += 1
+            elif salle[i][j] == "O4":
+                rapport["tables_occupees_4"] += 1
+                nbr_tables += 1
+    
+    rapport["taux_occupation"] = (rapport["tables_reservees_2"] + rapport["tables_reservees_4"] + rapport["tables_occupees_2"] + rapport["tables_occupees_4"]) / nbr_tables
     
     return rapport
 
